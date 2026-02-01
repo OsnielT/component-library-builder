@@ -1,27 +1,29 @@
 # Component Library Builder
 
-A web application that provides an in-browser development environment for creating React component libraries with design tokens.
+A web-based IDE for creating React component libraries with design tokens. Build, preview, and export production-ready components with an integrated code editor and live preview.
 
-## Features
+## ✨ Features
 
-- 🎨 **Visual Design Token Editor** - Manage tokens following W3C Design Tokens Format
-- ⚡ **Live Code Editor** - Powered by Sandpack (CodeSandbox)
-- 👀 **Real-time Preview** - See changes instantly
-- 📦 **Component Generation** - Generate React components from specs
-- 🔄 **Auto CSS Generation** - Tokens automatically convert to CSS variables
-- 💾 **Export** - Download your library or push to GitHub
+- 🎨 **Visual Design Token Editor** - Manage design tokens following W3C Design Tokens Format
+- 💻 **Monaco Code Editor** - Full VS Code editing experience in the browser
+- 👀 **Live Preview** - See component changes in real-time
+- 📦 **Component Generator** - Create React components from visual specs
+- 🎯 **Token-First Styling** - CSS variables automatically generated from design tokens
+- 🔄 **Auto-Save** - Never lose your work with automatic saving
+- 📐 **Resizable Panels** - Customize your workspace layout
+- 🚀 **Export Ready** - Download complete component library
 
-## Tech Stack
+## 🛠 Tech Stack
 
-- **Frontend**: Next.js 14 (App Router) + React 18
-- **Editor**: Sandpack by CodeSandbox
-- **UI**: Tailwind CSS
+- **Frontend**: Next.js 14 (App Router) + React 18 + TypeScript
+- **Editor**: Monaco Editor (VS Code in browser)
+- **UI**: Tailwind CSS + Custom Components
 - **State**: Zustand
 - **Validation**: Zod
 - **Testing**: Vitest + Playwright
-- **Code Generation**: Handlebars
+- **Code Generation**: Handlebars templates
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -31,6 +33,10 @@ A web application that provides an in-browser development environment for creati
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/OsnielT/component-library-builder.git
+cd component-library-builder
+
 # Install dependencies
 npm install
 
@@ -40,82 +46,78 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Development
+### Development Commands
 
 ```bash
-# Run development server
-npm run dev
+# Development
+npm run dev              # Start dev server
 
-# Run tests
-npm test
+# Testing
+npm test                 # Run unit tests
+npm run test:watch       # Run tests in watch mode
+npm run test:e2e         # Run E2E tests with Playwright
 
-# Run tests in watch mode
-npm run test:watch
+# Code Quality
+npm run type-check       # TypeScript type checking
+npm run lint             # ESLint
+npm run format           # Prettier formatting
 
-# Run E2E tests
-npm run test:e2e
-
-# Type check
-npm run type-check
-
-# Lint
-npm run lint
-
-# Build for production
-npm run build
+# Production
+npm run build            # Build for production
+npm start                # Start production server
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 component-library-builder/
-├── app/                    # Next.js app directory
-│   ├── editor/            # Editor page
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── editor/           # Editor components
-│   └── tokens/           # Token management UI
-├── lib/                  # Core business logic
-│   ├── core/            # Domain services
+├── app/                      # Next.js app directory
+│   ├── editor/              # Main editor page
+│   ├── projects/            # Project management
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Landing page
+├── components/              # React components
+│   ├── editor/             # Editor components
+│   │   ├── monaco-editor.tsx
+│   │   ├── live-preview.tsx
+│   │   └── resizable-layout.tsx
+│   ├── tokens/             # Token management UI
+│   └── components/         # Component builder UI
+├── lib/                    # Core business logic
+│   ├── core/              # Domain services
+│   │   ├── component-generator.ts
 │   │   ├── token-validator.ts
 │   │   ├── token-resolver.ts
 │   │   └── css-generator.ts
-│   └── store/           # Zustand stores
-│       ├── use-editor-store.ts
-│       └── use-token-store.ts
-├── types/               # TypeScript types
+│   ├── store/             # Zustand stores
+│   │   ├── use-editor-store.ts
+│   │   ├── use-token-store.ts
+│   │   ├── use-component-store.ts
+│   │   └── use-project-store.ts
+│   └── templates/         # Handlebars templates
+├── types/                 # TypeScript types
 │   ├── token.ts
 │   ├── component.ts
 │   └── project.ts
-└── .kiro/              # Kiro steering docs
+└── .kiro/                # Development docs
     └── steering/
 ```
 
-## Architecture
-
-The application follows a clean architecture with clear separation of concerns:
-
-- **UI Layer** (`components/`, `app/`) - React components and Next.js pages
-- **State Layer** (`lib/store/`) - Zustand stores for state management
-- **Domain Layer** (`lib/core/`) - Business logic and services
-- **Types Layer** (`types/`) - TypeScript type definitions
-
-## Design Tokens
+## 🎨 Design Tokens
 
 Tokens follow the [W3C Design Tokens Format](https://design-tokens.github.io/community-group/format/):
 
 ```typescript
 {
   $type: 'color',
-  $value: '#ff0000',
+  $value: '#3b82f6',
   $description: 'Primary brand color',
   $extensions: {
     'com.component-builder': {
       id: 'color.primary',
       cssVariable: '--color-primary',
-      category: 'primitive'
+      category: 'semantic'
     }
   }
 }
@@ -127,21 +129,110 @@ Tokens follow the [W3C Design Tokens Format](https://design-tokens.github.io/com
 - **Semantic**: Contextual tokens referencing primitives (e.g., `color.primary`)
 - **Component**: Component-specific tokens (e.g., `button.background`)
 
-## Contributing
+### Token Types
+
+- `color` - Color values (hex, rgb, hsl)
+- `dimension` - Sizes with units (px, rem, em, %)
+- `fontWeight` - Font weights (100-900)
+- `fontFamily` - Font family stacks
+- `duration` - Animation durations
+
+## 🏗 Architecture
+
+### Layered Architecture
+
+- **UI Layer** - React components and Next.js pages
+- **State Layer** - Zustand stores for state management
+- **Domain Layer** - Business logic and services
+- **Types Layer** - TypeScript type definitions
+
+### Key Features
+
+#### Monaco Editor Integration
+- Full TypeScript support with IntelliSense
+- React type definitions included
+- Syntax highlighting and error detection
+- Auto-save with debouncing
+
+#### Live Preview
+- Real-time component rendering
+- Isolated component preview
+- CSS variable support
+- Error boundary with helpful messages
+
+#### Component Generation
+- Template-based code generation
+- Automatic file structure creation
+- TypeScript interfaces
+- CSS modules with design tokens
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+### Docker
+
+```bash
+# Build image
+docker build -t component-library-builder .
+
+# Run container
+docker run -p 3000:3000 component-library-builder
+```
+
+### Manual Deployment
+
+```bash
+# Build
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+### Development Guidelines
 
-MIT
+- Follow the existing code style
+- Write tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
 
-## Resources
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 🔗 Resources
 
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Sandpack Documentation](https://sandpack.codesandbox.io/)
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/)
 - [W3C Design Tokens Format](https://design-tokens.github.io/community-group/format/)
 - [Zustand Documentation](https://docs.pmnd.rs/zustand)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+
+## 🙏 Acknowledgments
+
+- Monaco Editor by Microsoft
+- Next.js by Vercel
+- Design Tokens Community Group
+
+---
+
+Built with ❤️ using Next.js and TypeScript
