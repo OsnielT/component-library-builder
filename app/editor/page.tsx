@@ -10,9 +10,10 @@ import { ComponentPanel } from '@/components/components/component-panel';
 import { useProjectStore } from '@/lib/store/use-project-store';
 import { useEditorStore } from '@/lib/store/use-editor-store';
 import { useComponentStore } from '@/lib/store/use-component-store';
+import { useTokenStore } from '@/lib/store/use-token-store';
 import type { ComponentSpec } from '@/types';
 
-type SidebarTab = 'tokens' | 'components';
+type SidebarTab = 'tokens' | 'components' | 'styles';
 
 export default function EditorPage() {
   const [activeTab, setActiveTab] = useState<SidebarTab>('components');
@@ -27,6 +28,7 @@ export default function EditorPage() {
   const { currentProject, saveProject } = useProjectStore();
   const { activeFile, setActiveFile } = useEditorStore();
   const { components, deleteComponent } = useComponentStore();
+  const { tokens } = useTokenStore();
 
   // Update last saved time when status changes to saved
   useEffect(() => {
@@ -203,6 +205,16 @@ export default function EditorPage() {
                 Components
               </button>
               <button
+                onClick={() => setActiveTab('styles')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'styles'
+                    ? 'bg-background border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+              >
+                Styles
+              </button>
+              <button
                 onClick={() => setActiveTab('tokens')}
                 className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'tokens'
@@ -288,6 +300,58 @@ export default function EditorPage() {
                     )}
                   </div>
                 </div>
+              ) : activeTab === 'styles' ? (
+                <div className="h-full overflow-auto p-4">
+                  <h3 className="text-sm font-semibold mb-3">Quick Style Editor</h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Edit the CSS file for the current component
+                  </p>
+                  
+                  {activeFile.endsWith('.tsx') && activeFile.includes('/components/') ? (
+                    <button
+                      onClick={() => {
+                        // Open the corresponding CSS file
+                        const cssFile = activeFile.replace('.tsx', '.module.css');
+                        setActiveFile(cssFile);
+                      }}
+                      className="w-full px-3 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                    >
+                      Open CSS File
+                    </button>
+                  ) : activeFile.endsWith('.module.css') ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-green-50 border border-green-200 rounded">
+                        <p className="text-sm text-green-900">
+                          ✓ Currently editing CSS file
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // Go back to the component file
+                          const componentFile = activeFile.replace('.module.css', '.tsx');
+                          setActiveFile(componentFile);
+                        }}
+                        className="w-full px-3 py-2 border rounded hover:bg-accent transition-colors"
+                      >
+                        Back to Component
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-muted rounded text-sm text-muted-foreground">
+                      Select a component file to edit its styles
+                    </div>
+                  )}
+                  
+                  <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2">💡 Tip</h4>
+                    <p className="text-xs text-blue-800">
+                      Use CSS variables from your design tokens:
+                    </p>
+                    <code className="block mt-2 text-xs bg-blue-100 p-2 rounded font-mono">
+                      color: var(--color-primary);
+                    </code>
+                  </div>
+                </div>
               ) : (
                 <TokenPanel />
               )}
@@ -299,11 +363,17 @@ export default function EditorPage() {
             <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
               <h2 className="text-sm font-semibold">
                 Preview: {
-                  activeFile.includes('/components/') && 
-                  activeFile.endsWith('.tsx') && 
-                  !activeFile.endsWith('App.tsx')
-                    ? activeFile.split('/').pop()?.replace('.tsx', '')
-                    : 'App'
+                  (() => {
+                    // Show component name for both .tsx and .module.css files
+                    if (activeFile.includes('/components/')) {
+                      if (activeFile.endsWith('.tsx') && !activeFile.endsWith('App.tsx')) {
+                        return activeFile.split('/').pop()?.replace('.tsx', '');
+                      } else if (activeFile.endsWith('.module.css')) {
+                        return activeFile.split('/').pop()?.replace('.module.css', '');
+                      }
+                    }
+                    return 'App';
+                  })()
                 }
               </h2>
               <div className="text-xs text-muted-foreground">
@@ -319,8 +389,160 @@ export default function EditorPage() {
           <div className="h-full flex flex-col">
             <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Code Editor</h2>
-              <div className="text-xs text-muted-foreground font-mono">
-                {activeFile}
+              <div className="flex items-center gap-2">
+                {/* Insert Token Dropdown */}
+                {tokens.length > 0 && (
+                  <div className="relative group">
+                    <button
+                      className="px-2 py-1 text-xs border rounded hover:bg-accent transition-colors flex items-center gap-1"
+                      title="Insert design token"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                      Tokens
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    <div className="absolute right-0 top-full mt-1 w-80 bg-background border rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                      <div className="p-2 border-b bg-muted/30">
+                        <div className="text-xs font-semibold">Insert Design Token</div>
+                        <div className="text-xs text-muted-foreground">Click to copy CSS variable</div>
+                      </div>
+                      <div className="py-1 max-h-96 overflow-y-auto">
+                        {tokens.map((token) => {
+                          const tokenId = token.$extensions?.['com.component-builder']?.id || '';
+                          const cssVar = token.$extensions?.['com.component-builder']?.cssVariable || '';
+                          const value = String(token.$value);
+                          const isReference = value.startsWith('{') && value.endsWith('}');
+                          
+                          return (
+                            <button
+                              key={tokenId}
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(`var(${cssVar})`);
+                                  // Optional: Show a toast notification
+                                } catch (err) {
+                                  console.error('Failed to copy:', err);
+                                }
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-2"
+                            >
+                              {/* Color Preview */}
+                              {token.$type === 'color' && !isReference && (
+                                <div
+                                  className="w-6 h-6 rounded border-2 flex-shrink-0"
+                                  style={{ backgroundColor: value }}
+                                />
+                              )}
+                              
+                              {/* Token Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-medium truncate">{tokenId}</div>
+                                <code className="text-xs text-muted-foreground font-mono truncate block">
+                                  {cssVar}
+                                </code>
+                              </div>
+                              
+                              {/* Value */}
+                              <div className="text-xs text-muted-foreground font-mono flex-shrink-0">
+                                {isReference ? (
+                                  <span className="text-blue-600">{value}</span>
+                                ) : (
+                                  value.length > 20 ? value.substring(0, 20) + '...' : value
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Import Component Dropdown */}
+                {components.length > 0 && (
+                  <div className="relative group">
+                    <button
+                      className="px-2 py-1 text-xs border rounded hover:bg-accent transition-colors flex items-center gap-1"
+                      title="Import component to current file"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Import
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-background border rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                      <div className="py-1 max-h-64 overflow-y-auto">
+                        {components.map((component) => (
+                          <button
+                            key={component.name}
+                            onClick={() => {
+                              // Import the component to the active file
+                              const { files, activeFile } = useEditorStore.getState();
+                              const currentContent = files[activeFile] || '';
+                              
+                              // Calculate relative path
+                              const activeFileParts = activeFile.split('/').filter(Boolean);
+                              let relativePath: string;
+                              
+                              if (activeFile.startsWith('/components/')) {
+                                const activeDir = activeFileParts.slice(0, -1);
+                                const levelsUp = activeDir.length - 1;
+                                const upPath = levelsUp > 0 ? '../'.repeat(levelsUp) : './';
+                                relativePath = upPath + component.name;
+                              } else {
+                                relativePath = './components/' + component.name;
+                              }
+                              
+                              // Check if import already exists
+                              const importStatement = `import { ${component.name} } from '${relativePath}';`;
+                              if (currentContent.includes(`from '${relativePath}'`) || 
+                                  currentContent.includes(`from "${relativePath}"`) ||
+                                  currentContent.includes(`{ ${component.name} }`)) {
+                                alert(`${component.name} is already imported`);
+                                return;
+                              }
+                              
+                              // Find the last import line
+                              const lines = currentContent.split('\n');
+                              let insertIndex = 0;
+                              let foundImport = false;
+                              
+                              for (let i = 0; i < lines.length; i++) {
+                                if (lines[i].trim().startsWith('import ')) {
+                                  insertIndex = i + 1;
+                                  foundImport = true;
+                                } else if (foundImport && lines[i].trim() === '') {
+                                  insertIndex = i;
+                                  break;
+                                }
+                              }
+                              
+                              // Insert the import statement
+                              lines.splice(insertIndex, 0, importStatement);
+                              const newContent = lines.join('\n');
+                              
+                              // Update the file
+                              useEditorStore.getState().updateFile(activeFile, newContent);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors"
+                          >
+                            <div className="font-medium">{component.name}</div>
+                            <div className="text-muted-foreground">{component.type}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-xs text-muted-foreground font-mono">
+                  {activeFile}
+                </div>
               </div>
             </div>
             <div className="flex-1 overflow-hidden">

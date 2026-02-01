@@ -268,13 +268,56 @@ export function ComponentSpecForm({ spec, onSubmit, onCancel }: ComponentSpecFor
                       placeholder="propName"
                       className="flex-1 px-2 py-1 border rounded text-sm"
                     />
-                    <input
-                      type="text"
+                    <select
                       value={prop.type}
                       onChange={(e) => updateProp(index, { type: e.target.value })}
-                      placeholder="string"
                       className="flex-1 px-2 py-1 border rounded text-sm"
-                    />
+                    >
+                      <optgroup label="Primitives">
+                        <option value="string">string</option>
+                        <option value="number">number</option>
+                        <option value="boolean">boolean</option>
+                        <option value="any">any</option>
+                        <option value="unknown">unknown</option>
+                        <option value="void">void</option>
+                        <option value="null">null</option>
+                        <option value="undefined">undefined</option>
+                      </optgroup>
+                      <optgroup label="Arrays">
+                        <option value="string[]">string[]</option>
+                        <option value="number[]">number[]</option>
+                        <option value="boolean[]">boolean[]</option>
+                        <option value="any[]">any[]</option>
+                      </optgroup>
+                      <optgroup label="React Types">
+                        <option value="React.ReactNode">React.ReactNode</option>
+                        <option value="React.ReactElement">React.ReactElement</option>
+                        <option value="React.CSSProperties">React.CSSProperties</option>
+                        <option value="React.MouseEvent">React.MouseEvent</option>
+                        <option value="React.ChangeEvent">React.ChangeEvent</option>
+                        <option value="React.FormEvent">React.FormEvent</option>
+                        <option value="React.KeyboardEvent">React.KeyboardEvent</option>
+                        <option value="React.FocusEvent">React.FocusEvent</option>
+                      </optgroup>
+                      <optgroup label="Functions">
+                        <option value="() => void">() =&gt; void</option>
+                        <option value="(event: React.MouseEvent) => void">(event: React.MouseEvent) =&gt; void</option>
+                        <option value="(event: React.ChangeEvent) => void">(event: React.ChangeEvent) =&gt; void</option>
+                        <option value="(value: string) => void">(value: string) =&gt; void</option>
+                        <option value="(value: number) => void">(value: number) =&gt; void</option>
+                        <option value="(value: boolean) => void">(value: boolean) =&gt; void</option>
+                      </optgroup>
+                      <optgroup label="Objects">
+                        <option value="Record<string, any>">Record&lt;string, any&gt;</option>
+                        <option value="Record<string, string>">Record&lt;string, string&gt;</option>
+                        <option value="{ [key: string]: any }">&#123; [key: string]: any &#125;</option>
+                      </optgroup>
+                      <optgroup label="Unions">
+                        <option value="string | number">string | number</option>
+                        <option value="'small' | 'medium' | 'large'">'small' | 'medium' | 'large'</option>
+                        <option value="'left' | 'center' | 'right'">'left' | 'center' | 'right'</option>
+                      </optgroup>
+                    </select>
                     <button
                       type="button"
                       onClick={() => removeProp(index)}

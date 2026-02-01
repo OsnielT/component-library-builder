@@ -47,16 +47,23 @@ export function LivePreview() {
 
 function buildPreviewHTML(files: Record<string, string>, activeFile: string): string {
   // Determine what to render based on active file
-  const isComponentFile = activeFile.includes('/components/') && 
-                          activeFile.endsWith('.tsx') && 
-                          !activeFile.endsWith('App.tsx') &&
-                          !activeFile.includes('.test.') &&
-                          !activeFile.includes('.stories.');
+  // Support both .tsx and .module.css files
+  let isComponentFile = false;
+  let componentName: string | null = null;
   
-  // Extract component name from file path
-  const componentName = isComponentFile 
-    ? activeFile.split('/').pop()?.replace('.tsx', '') 
-    : null;
+  if (activeFile.includes('/components/')) {
+    if (activeFile.endsWith('.tsx') && 
+        !activeFile.endsWith('App.tsx') &&
+        !activeFile.includes('.test.') &&
+        !activeFile.includes('.stories.')) {
+      isComponentFile = true;
+      componentName = activeFile.split('/').pop()?.replace('.tsx', '') || null;
+    } else if (activeFile.endsWith('.module.css')) {
+      // If editing CSS file, show the corresponding component
+      isComponentFile = true;
+      componentName = activeFile.split('/').pop()?.replace('.module.css', '') || null;
+    }
+  }
   
   // Extract App.tsx content
   const appContent = files['/App.tsx'] || files['App.tsx'] || files['/components/App.tsx'] || 
