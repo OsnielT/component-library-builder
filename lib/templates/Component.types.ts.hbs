@@ -1,0 +1,14 @@
+import React from 'react';
+
+/**
+ * Props for the {{name}} component
+ * {{#if description}}{{description}}{{/if}}
+ */
+export interface {{name}}Props extends React.HTMLAttributes<HTMLDivElement> {
+  {{#each props}}
+  /**
+   * {{#if description}}{{description}}{{else}}{{name}} prop{{/if}}
+   */
+  {{name}}{{#unless required}}?{{/unless}}: {{type}};
+  {{/each}}
+}

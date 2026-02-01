@@ -1,0 +1,26 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { {{name}} } from './{{name}}';
+
+describe('{{name}}', () => {
+  it('should render successfully', () => {
+    render(<{{name}} {{#each props}}{{#if required}}{{name}}={{#if (eq type "string")}}"test"{{else if (eq type "number")}}0{{else if (eq type "boolean")}}true{{else}}{{json defaultValue}}{{/if}} {{/if}}{{/each}}/>);
+    expect(screen.getByRole('generic')).toBeInTheDocument();
+  });
+
+  {{#each props}}
+  it('should handle {{name}} prop', () => {
+    const {{name}} = {{#if (eq type "string")}}"test value"{{else if (eq type "number")}}42{{else if (eq type "boolean")}}true{{else}}{}{{/if}};
+    render(<{{../name}} {{name}}={{"{"}}{{name}}{{"}"}} {{#each ../props}}{{#if required}}{{#unless (eq name ../name)}}{{name}}={{#if (eq type "string")}}"test"{{else if (eq type "number")}}0{{else if (eq type "boolean")}}true{{else}}{{json defaultValue}}{{/if}} {{/unless}}{{/if}}{{/each}}/>);
+    // Add assertions for {{name}} prop behavior
+  });
+
+  {{/each}}
+  {{#each variants}}
+  it('should render {{name}} variant', () => {
+    render(<{{../name}} {{#each props}}{{@key}}={{"{"}}{{json this}}{{"}"}} {{/each}}{{#each ../props}}{{#if required}}{{name}}={{#if (eq type "string")}}"test"{{else if (eq type "number")}}0{{else if (eq type "boolean")}}true{{else}}{{json defaultValue}}{{/if}} {{/if}}{{/each}}/>);
+    // Add assertions for {{name}} variant
+  });
+
+  {{/each}}
+});

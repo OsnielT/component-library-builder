@@ -1,19 +1,29 @@
 # Product Overview
 
-Component Library Builder is a VS Code extension that helps developers build and manage React component libraries with design tokens.
+Component Library Builder is a web application that provides an in-browser development environment for creating React component libraries with design tokens.
 
 ## Core Features
 
-- Design token management following W3C Design Tokens Format
+- Browser-based VS Code editor for component development
+- Visual design token management following W3C Design Tokens Format
 - Component generation with TypeScript, tests, and Storybook stories
-- Automatic change propagation across components
-- Semantic versioning and changelog generation
-- One-command npm publishing
+- Live preview and testing in the browser
+- Export/download complete component library
+- Optional GitHub integration for publishing
 
 ## Target Users
 
 Developers and teams building React component libraries who need:
-- Consistent design token management
+- No-setup browser-based development environment
+- Visual design token management
 - Automated component scaffolding
-- Type-safe component APIs
-- Integrated testing and documentation
+- Live preview and testing
+- Easy export and distribution
+
+## Key Differentiators
+
+- Zero installation - works entirely in the browser
+- Visual token editor with live preview
+- Integrated VS Code experience via Monaco/CodeSandbox
+- Instant component generation and preview
+- Export to GitHub or download as zip

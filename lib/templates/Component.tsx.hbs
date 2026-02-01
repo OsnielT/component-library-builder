@@ -1,0 +1,35 @@
+import React from 'react';
+import { {{name}}Props } from './{{name}}.types';
+
+/**
+ * {{#if description}}{{description}}{{else}}{{name}} component{{/if}}
+ * 
+ * Uses design tokens via CSS variables for styling.
+ * Tokens used: {{#each tokens}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+ */
+export const {{name}}: React.FC<{{name}}Props> = ({
+  {{#each props}}
+  {{name}}{{#if defaultValue}} = {{#if (eq type "string")}}'{{defaultValue}}'{{else if (eq type "boolean")}}{{defaultValue}}{{else}}{{defaultValue}}{{/if}}{{/if}},
+  {{/each}}
+  children,
+  className = '',
+  style,
+  ...rest
+}) => {
+  const componentStyle: React.CSSProperties = {
+    {{#each tokens}}
+    // Using token: {{this}}
+    {{/each}}
+    ...style
+  };
+
+  return (
+    <div 
+      className={`{{kebabCase name}} ${className}`}
+      style={componentStyle}
+      {...rest}
+    >
+      {children || <span>{{name}} Component</span>}
+    </div>
+  );
+};

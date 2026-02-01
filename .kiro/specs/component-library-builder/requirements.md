@@ -2,24 +2,25 @@
 
 ## Introduction
 
-The Component Library Builder is a VS Code extension that provides an integrated development environment for creating, managing, and distributing React component libraries. It combines design token management, component scaffolding, Storybook integration, and automated distribution into a cohesive developer workflow.
+The Component Library Builder is a web application that provides a browser-based integrated development environment for creating, managing, and distributing React component libraries. It combines design token management, component scaffolding, live preview, and automated code generation into a cohesive developer workflow that runs entirely in the browser.
 
-The system targets frontend developers building component libraries, design system teams, and UI/UX engineers maintaining design consistency. The core value proposition is to reduce component development time by 60%, ensure design consistency through centralized token management, and automate repetitive tasks.
+The system targets frontend developers building component libraries, design system teams, and UI/UX engineers maintaining design consistency. The core value proposition is to reduce component development time by 60%, ensure design consistency through centralized token management, eliminate setup friction with zero-installation browser-based development, and automate repetitive tasks.
 
 ## Glossary
 
-- **Extension**: The VS Code extension that provides the Component Library Builder functionality
+- **Application**: The web application that provides the Component Library Builder functionality
 - **Design_Token**: A named entity that stores visual design attributes following W3C Design Tokens Format
 - **Token_Manager**: The system component responsible for creating, editing, and managing design tokens
 - **Component_Generator**: The system component that generates React components from templates
-- **Storybook_Integration**: The system component that generates and configures Storybook stories
+- **Code_Editor**: The browser-based code editor component (Monaco or Sandpack) for editing component files
+- **Live_Preview**: The system component that renders and displays components in real-time
 - **Token_Validator**: The system component that validates tokens against W3C specifications
 - **CSS_Variable_Generator**: The system component that generates CSS variables from tokens
-- **Version_Manager**: The system component that handles semantic versioning
+- **File_System**: The in-memory or browser-based file system for managing project files
 - **Propagation_Engine**: The system component that detects and propagates token changes
 - **Component_Spec**: A specification defining a component's structure, props, and behavior
 - **Template_Engine**: The system component that renders code templates using Handlebars
-- **npm_Publisher**: The system component that publishes packages to npm registry
+- **Export_Manager**: The system component that packages and exports projects as zip files or to GitHub
 - **Dependency_Graph**: A data structure tracking relationships between tokens and components
 - **Token_Reference**: A token that references another token's value (aliasing)
 - **Primitive_Token**: A base token with a direct value (not a reference)
@@ -27,8 +28,8 @@ The system targets frontend developers building component libraries, design syst
 - **Component_Token**: A component-specific token that references semantic tokens
 - **Data_Contract**: A JSON Schema defining expected data shape for a component
 - **Mock_Data_Generator**: The system component that generates mock data from schemas
-- **Changelog_Generator**: The system component that generates changelog entries
-- **Snapshot_Manager**: The system component that creates and manages system snapshots
+- **Project**: A user's component library workspace containing tokens, components, and configuration
+- **User**: An authenticated user of the application with saved projects
 
 ## Requirements
 
@@ -38,7 +39,7 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN a user creates a design token via the UI, THE Token_Manager SHALL save the token to a JSON file with valid W3C format
+1. WHEN a user creates a design token via the UI, THE Token_Manager SHALL save the token to the project's data store with valid W3C format
 2. WHEN a user edits an existing token, THE Token_Manager SHALL persist the changes and update the timestamp
 3. WHEN a user attempts to delete a token, THE Token_Manager SHALL check for dependent components before deletion
 4. WHEN a token has dependent components, THE Token_Manager SHALL display a warning message listing all dependencies
@@ -68,11 +69,11 @@ The system targets frontend developers building component libraries, design syst
 #### Acceptance Criteria
 
 1. WHEN a token value contains a reference pattern, THE Token_Manager SHALL recognize it as a Token_Reference
-2. WHEN resolving a Token_Reference, THE Extension SHALL recursively resolve references until reaching a primitive value
-3. WHEN a Token_Reference points to a non-existent token, THE Extension SHALL return an error indicating the missing reference
-4. THE Extension SHALL support three token categories: primitive, semantic, and component
+2. WHEN resolving a Token_Reference, THE Application SHALL recursively resolve references until reaching a primitive value
+3. WHEN a Token_Reference points to a non-existent token, THE Application SHALL return an error indicating the missing reference
+4. THE Application SHALL support three token categories: primitive, semantic, and component
 5. WHEN generating CSS variables, THE CSS_Variable_Generator SHALL resolve all Token_References to their final values
-6. THE Extension SHALL maintain a Dependency_Graph tracking which tokens reference other tokens
+6. THE Application SHALL maintain a Dependency_Graph tracking which tokens reference other tokens
 
 ### Requirement 4: CSS Variable Generation
 
@@ -117,33 +118,35 @@ The system targets frontend developers building component libraries, design syst
 5. WHEN a prop has a description, THE Component_Generator SHALL include the description as a JSDoc comment
 6. THE Component_Generator SHALL extend React.HTMLAttributes for standard HTML props support
 
-### Requirement 7: Storybook Story Generation
+### Requirement 7: Live Component Preview
 
-**User Story:** As a component developer, I want Storybook stories automatically generated for my components, so that I can document and test components without manual story writing.
-
-#### Acceptance Criteria
-
-1. WHEN a component is generated, THE Storybook_Integration SHALL create a story file with Storybook 7+ format
-2. THE Storybook_Integration SHALL generate a default story with example prop values
-3. WHEN a Component_Spec includes variants, THE Storybook_Integration SHALL generate a story for each variant
-4. WHEN a Component_Spec includes props, THE Storybook_Integration SHALL configure argTypes with appropriate controls
-5. WHEN a prop type is boolean, THE Storybook_Integration SHALL use a boolean control
-6. WHEN a prop type is string with enum values, THE Storybook_Integration SHALL use a select control with the enum options
-7. WHEN a prop type is number, THE Storybook_Integration SHALL use a number control
-8. THE Storybook_Integration SHALL include autodocs tag for automatic documentation generation
-
-### Requirement 8: Storybook Configuration Management
-
-**User Story:** As a component library maintainer, I want Storybook automatically configured, so that I can start documenting components without manual setup.
+**User Story:** As a component developer, I want to see live previews of my components as I edit them, so that I can iterate quickly and see changes in real-time.
 
 #### Acceptance Criteria
 
-1. WHEN initializing a component library, THE Storybook_Integration SHALL generate a main.ts configuration file
-2. THE Storybook_Integration SHALL configure standard addons including links, essentials, interactions, and a11y
-3. THE Storybook_Integration SHALL generate a preview.ts file that imports the generated CSS variables
-4. WHEN design tokens include color tokens, THE Storybook_Integration SHALL configure background options using token values
-5. THE Storybook_Integration SHALL configure the framework as @storybook/react-vite
-6. THE Storybook_Integration SHALL enable autodocs for all stories
+1. WHEN a component file is edited, THE Live_Preview SHALL automatically update to show the latest changes
+2. THE Live_Preview SHALL render components in an isolated iframe or sandbox environment
+3. WHEN a Component_Spec includes variants, THE Live_Preview SHALL provide controls to switch between variants
+4. THE Live_Preview SHALL provide responsive preview modes for desktop, tablet, and mobile viewports
+5. WHEN a prop type is boolean, THE Live_Preview SHALL provide a toggle control
+6. WHEN a prop type is string with enum values, THE Live_Preview SHALL provide a select control with the enum options
+7. WHEN a prop type is number, THE Live_Preview SHALL provide a number input control
+8. THE Live_Preview SHALL display prop controls in a panel alongside the component preview
+
+### Requirement 8: Code Editor Integration
+
+**User Story:** As a developer, I want a full-featured code editor in the browser, so that I can edit component files with syntax highlighting, autocomplete, and error detection.
+
+#### Acceptance Criteria
+
+1. THE Code_Editor SHALL provide syntax highlighting for TypeScript, JavaScript, CSS, and JSON files
+2. THE Code_Editor SHALL provide IntelliSense autocomplete for TypeScript and JavaScript
+3. THE Code_Editor SHALL display inline error messages and warnings
+4. THE Code_Editor SHALL support multiple open files with tabs
+5. THE Code_Editor SHALL provide a file tree navigator for browsing project files
+6. WHEN a user types "var(--", THE Code_Editor SHALL show autocomplete suggestions for available CSS variables from tokens
+7. THE Code_Editor SHALL auto-save changes to the in-memory file system
+8. THE Code_Editor SHALL support common keyboard shortcuts for save, undo, redo, and find
 
 ### Requirement 9: Data Contract Schema Definition
 
@@ -151,13 +154,13 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN a Component_Spec includes a data contract, THE Extension SHALL store the JSON Schema definition
-2. THE Extension SHALL validate data contracts against JSON Schema Draft 7 specification
-3. WHEN a data contract is defined, THE Extension SHALL generate TypeScript interfaces from the schema
-4. THE Extension SHALL support object, array, string, number, and boolean schema types
-5. WHEN a schema property is in the required array, THE Extension SHALL generate a non-optional TypeScript property
-6. WHEN a schema property is not in the required array, THE Extension SHALL generate an optional TypeScript property
-7. WHEN a schema includes nested objects, THE Extension SHALL generate nested TypeScript interfaces
+1. WHEN a Component_Spec includes a data contract, THE Application SHALL store the JSON Schema definition
+2. THE Application SHALL validate data contracts against JSON Schema Draft 7 specification
+3. WHEN a data contract is defined, THE Application SHALL generate TypeScript interfaces from the schema
+4. THE Application SHALL support object, array, string, number, and boolean schema types
+5. WHEN a schema property is in the required array, THE Application SHALL generate a non-optional TypeScript property
+6. WHEN a schema property is not in the required array, THE Application SHALL generate an optional TypeScript property
+7. WHEN a schema includes nested objects, THE Application SHALL generate nested TypeScript interfaces
 
 ### Requirement 10: Mock Data Generation
 
@@ -174,51 +177,52 @@ The system targets frontend developers building component libraries, design syst
 7. WHEN a schema property has an enum, THE Mock_Data_Generator SHALL select a random value from the enum
 8. WHEN a schema property description contains hints like "name" or "email", THE Mock_Data_Generator SHALL use appropriate faker methods
 
-### Requirement 11: Semantic Version Management
+### Requirement 11: Project Management
 
-**User Story:** As a library maintainer, I want semantic versioning automated, so that I can publish versions following semver conventions without manual version calculations.
-
-#### Acceptance Criteria
-
-1. WHEN a user requests a version bump, THE Version_Manager SHALL determine the bump type as major, minor, or patch
-2. WHEN breaking changes are detected, THE Version_Manager SHALL bump the major version
-3. WHEN new features are detected without breaking changes, THE Version_Manager SHALL bump the minor version
-4. WHEN only fixes are detected, THE Version_Manager SHALL bump the patch version
-5. WHEN bumping a major version, THE Version_Manager SHALL set minor and patch to 0
-6. WHEN bumping a minor version, THE Version_Manager SHALL set patch to 0 and preserve major
-7. WHEN bumping a patch version, THE Version_Manager SHALL preserve major and minor
-8. THE Version_Manager SHALL update the version in package.json
-
-### Requirement 12: Changelog Generation
-
-**User Story:** As a library maintainer, I want changelogs automatically generated, so that I can communicate changes to users without manual changelog writing.
+**User Story:** As a user, I want to create, save, and manage multiple component library projects, so that I can work on different libraries and switch between them.
 
 #### Acceptance Criteria
 
-1. WHEN a version is bumped, THE Changelog_Generator SHALL create a new changelog entry
-2. THE Changelog_Generator SHALL group changes by type including breaking, features, fixes, docs, and chores
-3. WHEN breaking changes exist, THE Changelog_Generator SHALL list them in a BREAKING CHANGES section with warning emoji
-4. WHEN features exist, THE Changelog_Generator SHALL list them in a Features section with sparkles emoji
-5. WHEN fixes exist, THE Changelog_Generator SHALL list them in a Bug Fixes section with bug emoji
-6. THE Changelog_Generator SHALL include the version number and date in ISO format
-7. THE Changelog_Generator SHALL follow Keep a Changelog format
-8. THE Changelog_Generator SHALL prepend new entries to the existing CHANGELOG.md file
+1. WHEN a user creates a new project, THE Application SHALL initialize a project with default file structure and configuration
+2. THE Application SHALL save project data including tokens, components, and files to persistent storage
+3. WHEN a user opens a project, THE Application SHALL load all project data and restore the editor state
+4. THE Application SHALL provide a project list view showing all user projects with names and last modified dates
+5. WHEN a user deletes a project, THE Application SHALL prompt for confirmation before permanent deletion
+6. THE Application SHALL auto-save project changes at regular intervals
+7. THE Application SHALL support project renaming and description editing
+8. WHEN a user is not authenticated, THE Application SHALL store projects in browser local storage
 
-### Requirement 13: npm Publishing
+### Requirement 12: User Authentication
 
-**User Story:** As a library maintainer, I want to publish to npm with one command, so that I can distribute my component library without manual publishing steps.
+**User Story:** As a user, I want to create an account and log in, so that I can save my projects in the cloud and access them from any device.
 
 #### Acceptance Criteria
 
-1. WHEN a user initiates publishing, THE npm_Publisher SHALL run all tests before publishing
-2. WHEN a user initiates publishing, THE npm_Publisher SHALL run linting before publishing
-3. WHEN a user initiates publishing, THE npm_Publisher SHALL run type checking before publishing
-4. IF any pre-publish check fails, THEN THE npm_Publisher SHALL abort the publish and display the error
-5. WHEN pre-publish checks pass, THE npm_Publisher SHALL build the package
-6. WHEN the build completes, THE npm_Publisher SHALL create a Git tag with the version number
-7. WHEN the Git tag is created, THE npm_Publisher SHALL publish the package to npm registry
-8. WHEN publishing succeeds, THE npm_Publisher SHALL push the Git tag to the remote repository
-9. WHEN a user enables dry-run mode, THE npm_Publisher SHALL simulate publishing without actually publishing
+1. THE Application SHALL provide a sign-up form accepting email and password
+2. THE Application SHALL validate email format and password strength during sign-up
+3. THE Application SHALL hash passwords before storing them in the database
+4. THE Application SHALL provide a login form accepting email and password
+5. WHEN login succeeds, THE Application SHALL issue a JWT token for authentication
+6. THE Application SHALL store the JWT token securely in the browser
+7. THE Application SHALL provide a logout function that clears the authentication token
+8. WHEN a user is authenticated, THE Application SHALL sync projects to the cloud database
+9. THE Application SHALL support OAuth login with GitHub and Google accounts
+
+### Requirement 13: Project Export and Distribution
+
+**User Story:** As a library maintainer, I want to export my component library, so that I can download it as a zip file or publish it to GitHub.
+
+#### Acceptance Criteria
+
+1. WHEN a user requests export, THE Export_Manager SHALL package all project files into a zip archive
+2. THE Export_Manager SHALL include a package.json file with project metadata and dependencies
+3. THE Export_Manager SHALL include a README.md file with usage instructions
+4. THE Export_Manager SHALL include all generated component files, tokens, and CSS variables
+5. WHEN a user connects their GitHub account, THE Export_Manager SHALL provide an option to push the project to a new GitHub repository
+6. WHEN pushing to GitHub, THE Export_Manager SHALL create a new repository with the project name
+7. WHEN pushing to GitHub, THE Export_Manager SHALL commit all project files with an initial commit message
+8. THE Export_Manager SHALL provide a download button to save the zip file to the user's device
+9. THE Export_Manager SHALL include build scripts and configuration files for npm package publishing
 
 ### Requirement 14: Change Detection and Propagation
 
@@ -241,29 +245,29 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN token changes are detected, THE Extension SHALL calculate impact severity as low, medium, high, or critical
-2. WHEN token deletions affect more than 10 components, THE Extension SHALL classify severity as critical
-3. WHEN token deletions affect 1 to 10 components, THE Extension SHALL classify severity as high
-4. WHEN token updates affect more than 20 components, THE Extension SHALL classify severity as high
-5. WHEN token updates affect 6 to 20 components, THE Extension SHALL classify severity as medium
-6. WHEN token updates affect 1 to 5 components, THE Extension SHALL classify severity as low
-7. THE Extension SHALL list all affected components with details of required changes
-8. WHEN token deletions are detected, THE Extension SHALL flag the changes as breaking
-9. WHEN breaking changes are detected, THE Extension SHALL indicate that migration is required
+1. WHEN token changes are detected, THE Application SHALL calculate impact severity as low, medium, high, or critical
+2. WHEN token deletions affect more than 10 components, THE Application SHALL classify severity as critical
+3. WHEN token deletions affect 1 to 10 components, THE Application SHALL classify severity as high
+4. WHEN token updates affect more than 20 components, THE Application SHALL classify severity as high
+5. WHEN token updates affect 6 to 20 components, THE Application SHALL classify severity as medium
+6. WHEN token updates affect 1 to 5 components, THE Application SHALL classify severity as low
+7. THE Application SHALL list all affected components with details of required changes
+8. WHEN token deletions are detected, THE Application SHALL flag the changes as breaking
+9. WHEN breaking changes are detected, THE Application SHALL indicate that migration is required
 
-### Requirement 16: Snapshot and Rollback
+### Requirement 16: File System Management
 
-**User Story:** As a design system maintainer, I want to create snapshots and rollback changes, so that I can safely experiment with token changes and recover from mistakes.
+**User Story:** As a developer, I want the application to manage project files in memory, so that I can work with a complete file structure without server-side file operations.
 
 #### Acceptance Criteria
 
-1. WHEN a user requests a snapshot, THE Snapshot_Manager SHALL capture the current state of all tokens
-2. WHEN a user requests a snapshot, THE Snapshot_Manager SHALL capture the current state of all components
-3. THE Snapshot_Manager SHALL store snapshots with a unique ID, timestamp, and description
-4. WHEN a user requests a rollback, THE Snapshot_Manager SHALL restore tokens from the specified snapshot
-5. WHEN a user requests a rollback, THE Snapshot_Manager SHALL create a backup snapshot of the current state before rolling back
-6. WHEN a rollback completes, THE Snapshot_Manager SHALL trigger the Propagation_Engine to regenerate all assets
-7. THE Snapshot_Manager SHALL store snapshots in a persistent location
+1. THE File_System SHALL maintain an in-memory representation of all project files
+2. THE File_System SHALL support creating, reading, updating, and deleting files
+3. THE File_System SHALL organize files in a hierarchical directory structure
+4. WHEN a file is created or updated, THE File_System SHALL notify subscribed components of the change
+5. THE File_System SHALL validate file paths to prevent invalid or malicious paths
+6. THE File_System SHALL support file operations for TypeScript, JavaScript, CSS, JSON, and Markdown files
+7. THE File_System SHALL persist file changes to the project data store
 
 ### Requirement 17: Component Dependency Tracking
 
@@ -271,11 +275,11 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN a component is generated with tokens, THE Extension SHALL record the dependency in the Dependency_Graph
-2. WHEN a component is updated with different tokens, THE Extension SHALL update the dependencies in the Dependency_Graph
-3. WHEN a component is deleted, THE Extension SHALL remove its dependencies from the Dependency_Graph
-4. WHEN querying dependencies for a token, THE Extension SHALL return all component IDs that use the token
-5. WHEN querying dependencies for a component, THE Extension SHALL return all token IDs used by the component
+1. WHEN a component is generated with tokens, THE Application SHALL record the dependency in the Dependency_Graph
+2. WHEN a component is updated with different tokens, THE Application SHALL update the dependencies in the Dependency_Graph
+3. WHEN a component is deleted, THE Application SHALL remove its dependencies from the Dependency_Graph
+4. WHEN querying dependencies for a token, THE Application SHALL return all component IDs that use the token
+5. WHEN querying dependencies for a component, THE Application SHALL return all token IDs used by the component
 6. THE Dependency_Graph SHALL support efficient lookup in both directions
 
 ### Requirement 18: Template Customization
@@ -284,9 +288,9 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. THE Extension SHALL use Handlebars as the Template_Engine
-2. THE Extension SHALL provide default templates for component, types, styles, tests, and stories
-3. WHEN a user provides custom templates, THE Extension SHALL use the custom templates instead of defaults
+1. THE Application SHALL use Handlebars as the Template_Engine
+2. THE Application SHALL provide default templates for component, types, styles, tests, and stories
+3. WHEN a user provides custom templates, THE Application SHALL use the custom templates instead of defaults
 4. THE Template_Engine SHALL support standard Handlebars helpers including if, each, and unless
 5. THE Template_Engine SHALL provide custom helpers for common transformations including camelCase, pascalCase, and kebabCase
 6. WHEN rendering templates, THE Template_Engine SHALL pass the Component_Spec as context
@@ -298,27 +302,28 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN writing files, THE Extension SHALL use atomic write operations
-2. IF a file write fails, THEN THE Extension SHALL rollback any partial changes
-3. WHEN performing destructive operations, THE Extension SHALL create automatic backups
-4. WHEN a backup is created, THE Extension SHALL store it with a timestamp
-5. THE Extension SHALL validate file paths to prevent directory traversal attacks
-6. WHEN a file path is provided, THE Extension SHALL verify it is within the workspace directory
-7. IF a file path is outside the workspace, THEN THE Extension SHALL reject the operation
+1. WHEN writing files, THE Application SHALL use atomic write operations in the in-memory file system
+2. IF a file write fails, THEN THE Application SHALL rollback any partial changes
+3. WHEN performing destructive operations, THE Application SHALL create automatic backups in memory
+4. WHEN a backup is created, THE Application SHALL store it with a timestamp
+5. THE Application SHALL validate file paths to prevent directory traversal attacks
+6. WHEN a file path is provided, THE Application SHALL verify it is within the project directory structure
+7. IF a file path is outside the project structure, THEN THE Application SHALL reject the operation
 
-### Requirement 20: Extension Performance
+### Requirement 20: Application Performance
 
-**User Story:** As a developer, I want the extension to be fast and responsive, so that it doesn't slow down my development workflow.
+**User Story:** As a developer, I want the application to be fast and responsive, so that it doesn't slow down my development workflow.
 
 #### Acceptance Criteria
 
-1. WHEN the extension activates, THE Extension SHALL complete activation within 500 milliseconds
-2. WHEN searching or filtering tokens, THE Extension SHALL respond within 100 milliseconds
-3. WHEN generating a component with all files, THE Extension SHALL complete within 5 seconds
-4. WHEN propagating changes to 100 components, THE Extension SHALL complete within 30 seconds
-5. THE Extension SHALL maintain memory usage below 200 megabytes during normal operation
-6. THE Extension SHALL cache frequently accessed data in memory
-7. THE Extension SHALL debounce rapid token changes to avoid excessive propagation
+1. WHEN the application loads, THE Application SHALL complete initial render within 2 seconds
+2. WHEN searching or filtering tokens, THE Application SHALL respond within 100 milliseconds
+3. WHEN generating a component with all files, THE Application SHALL complete within 5 seconds
+4. WHEN propagating changes to 100 components, THE Application SHALL complete within 30 seconds
+5. THE Application SHALL maintain memory usage below 500 megabytes during normal operation
+6. THE Application SHALL cache frequently accessed data in memory
+7. THE Application SHALL debounce rapid token changes to avoid excessive propagation
+8. WHEN the live preview updates, THE Application SHALL render changes within 500 milliseconds
 
 ### Requirement 21: Error Handling and Recovery
 
@@ -326,53 +331,55 @@ The system targets frontend developers building component libraries, design syst
 
 #### Acceptance Criteria
 
-1. WHEN an error occurs, THE Extension SHALL display a clear error message describing the problem
-2. WHEN an error occurs, THE Extension SHALL include actionable steps to resolve the issue
-3. WHEN a validation error occurs, THE Extension SHALL highlight the specific field or value that failed validation
-4. WHEN a file operation fails, THE Extension SHALL attempt to rollback any partial changes
-5. WHEN an external integration fails, THE Extension SHALL continue operating with degraded functionality
-6. THE Extension SHALL log errors to the VS Code output channel for debugging
-7. WHEN a critical error occurs, THE Extension SHALL preserve user data before failing
+1. WHEN an error occurs, THE Application SHALL display a clear error message describing the problem
+2. WHEN an error occurs, THE Application SHALL include actionable steps to resolve the issue
+3. WHEN a validation error occurs, THE Application SHALL highlight the specific field or value that failed validation
+4. WHEN a file operation fails, THE Application SHALL attempt to rollback any partial changes
+5. WHEN an external integration fails, THE Application SHALL continue operating with degraded functionality
+6. THE Application SHALL log errors to the browser console for debugging
+7. WHEN a critical error occurs, THE Application SHALL preserve user data before failing
+8. THE Application SHALL provide a user-friendly error boundary component that catches React errors
 
-### Requirement 22: VS Code Integration
+### Requirement 22: User Interface Design
 
-**User Story:** As a VS Code user, I want the extension to integrate seamlessly with VS Code, so that I can use familiar VS Code patterns and workflows.
-
-#### Acceptance Criteria
-
-1. THE Extension SHALL register all commands in the VS Code command palette
-2. THE Extension SHALL provide tree views for tokens and components in the sidebar
-3. THE Extension SHALL display status bar items showing token count, component count, and library version
-4. WHEN a user clicks a status bar item, THE Extension SHALL open the relevant view or panel
-5. THE Extension SHALL provide IntelliSense for CSS variable names in CSS and SCSS files
-6. WHEN a user types "var(--", THE Extension SHALL show autocomplete suggestions for available tokens
-7. THE Extension SHALL provide diagnostics for deprecated tokens with warnings in the editor
-8. WHEN a deprecated token is used, THE Extension SHALL suggest the replacement token
-
-### Requirement 23: Multi-Platform Compatibility
-
-**User Story:** As a developer on any platform, I want the extension to work consistently, so that I can use it regardless of my operating system.
+**User Story:** As a user, I want an intuitive and modern user interface, so that I can navigate the application easily and focus on building components.
 
 #### Acceptance Criteria
 
-1. THE Extension SHALL support VS Code version 1.85.0 and later
-2. THE Extension SHALL support Node.js versions 18.x, 20.x, and 22.x
-3. THE Extension SHALL support Windows 10 and later
-4. THE Extension SHALL support macOS 12 and later
-5. THE Extension SHALL support Linux distributions including Ubuntu 20.04 and later
-6. THE Extension SHALL use cross-platform file path handling
-7. THE Extension SHALL use cross-platform line endings based on the system default
+1. THE Application SHALL provide a responsive layout that works on desktop and tablet devices
+2. THE Application SHALL use a sidebar for navigation between tokens, components, and project settings
+3. THE Application SHALL display a file tree navigator showing the project file structure
+4. THE Application SHALL provide a main editor area with tabs for multiple open files
+5. THE Application SHALL display a live preview panel that can be resized or toggled
+6. THE Application SHALL use a consistent design system with accessible color contrast ratios
+7. THE Application SHALL provide keyboard shortcuts for common actions like save, new file, and toggle preview
+8. THE Application SHALL display loading indicators for asynchronous operations
+
+### Requirement 23: Multi-Browser Compatibility
+
+**User Story:** As a developer on any platform, I want the application to work consistently across browsers, so that I can use it regardless of my browser choice.
+
+#### Acceptance Criteria
+
+1. THE Application SHALL support Chrome version 100 and later
+2. THE Application SHALL support Firefox version 100 and later
+3. THE Application SHALL support Safari version 15 and later
+4. THE Application SHALL support Edge version 100 and later
+5. THE Application SHALL use standard Web APIs that work across all supported browsers
+6. THE Application SHALL provide fallbacks for browser-specific features
+7. THE Application SHALL test and validate functionality on all supported browsers
 
 ### Requirement 24: Documentation and Help
 
-**User Story:** As a new user, I want comprehensive documentation and inline help, so that I can learn to use the extension effectively.
+**User Story:** As a new user, I want comprehensive documentation and inline help, so that I can learn to use the application effectively.
 
 #### Acceptance Criteria
 
-1. THE Extension SHALL provide a getting started guide accessible from the command palette
-2. THE Extension SHALL provide inline help for all commands and features
-3. THE Extension SHALL include TSDoc comments for all public APIs
-4. THE Extension SHALL provide example projects demonstrating common use cases
-5. WHEN a user encounters an error, THE Extension SHALL provide links to relevant documentation
-6. THE Extension SHALL provide tooltips for all UI elements explaining their purpose
-7. THE Extension SHALL include a troubleshooting guide for common issues
+1. THE Application SHALL provide a getting started guide accessible from the help menu
+2. THE Application SHALL provide inline help tooltips for all UI elements
+3. THE Application SHALL include documentation for all features and workflows
+4. THE Application SHALL provide example projects demonstrating common use cases
+5. WHEN a user encounters an error, THE Application SHALL provide links to relevant documentation
+6. THE Application SHALL provide a searchable help center with tutorials and guides
+7. THE Application SHALL include a troubleshooting guide for common issues
+8. THE Application SHALL provide video tutorials for key features

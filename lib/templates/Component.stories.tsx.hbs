@@ -1,0 +1,65 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { {{name}} } from './{{name}}';
+
+/**
+ * {{#if description}}{{description}}{{else}}{{name}} component stories{{/if}}
+ */
+const meta: Meta<typeof {{name}}> = {
+  title: 'Components/{{name}}',
+  component: {{name}},
+  tags: ['autodocs'],
+  argTypes: {
+    {{#each props}}
+    {{name}}: {
+      {{#if (eq type "boolean")}}
+      control: 'boolean',
+      {{else if (eq type "number")}}
+      control: 'number',
+      {{else if (eq type "string")}}
+      control: 'text',
+      {{else}}
+      control: 'object',
+      {{/if}}
+      {{#if description}}
+      description: '{{description}}',
+      {{/if}}
+    },
+    {{/each}}
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof {{name}}>;
+
+/**
+ * Default story with example args
+ */
+export const Default: Story = {
+  args: {
+    {{#each props}}
+    {{#if defaultValue}}
+    {{name}}: {{json defaultValue}},
+    {{else if (eq type "string")}}
+    {{name}}: 'Example text',
+    {{else if (eq type "number")}}
+    {{name}}: 0,
+    {{else if (eq type "boolean")}}
+    {{name}}: false,
+    {{/if}}
+    {{/each}}
+  },
+};
+
+{{#each variants}}
+/**
+ * {{name}} variant
+ */
+export const {{pascalCase name}}: Story = {
+  args: {
+    {{#each props}}
+    {{@key}}: {{json this}},
+    {{/each}}
+  },
+};
+
+{{/each}}

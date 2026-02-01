@@ -1,0 +1,24 @@
+/* {{name}} Component Styles */
+/* Uses CSS custom properties (design tokens) */
+
+.{{kebabCase name}} {
+  /* Apply design tokens */
+  {{#each tokens}}
+  /* Token: {{this}} -> var(--{{this}}) */
+  {{/each}}
+  
+  /* Base styles using tokens */
+  display: block;
+  {{#if customStyles}}
+  {{customStyles}}
+  {{/if}}
+}
+
+{{#each variants}}
+/* Variant: {{name}} */
+.{{kebabCase ../name}}--{{kebabCase name}} {
+  {{#each tokens}}
+  /* Token override: {{@key}} = {{this}} */
+  {{/each}}
+}
+{{/each}}

@@ -2,26 +2,31 @@
 
 ## Overview
 
-The Component Library Builder is a VS Code extension that provides an integrated development environment for creating, managing, and distributing React component libraries. The system combines design token management, component scaffolding, Storybook integration, and automated distribution into a unified workflow.
+The Component Library Builder is a web application that provides a browser-based integrated development environment for creating, managing, and distributing React component libraries. The system combines design token management, component scaffolding, live preview, and automated code generation into a cohesive developer workflow that runs entirely in the browser.
 
 ### Core Capabilities
 
 - **Design Token Management**: Create, edit, validate, and organize design tokens following W3C Design Tokens Format
 - **Component Generation**: Generate React components with TypeScript, tests, and Storybook stories from templates
+- **Live Preview**: Real-time component preview with variant switching and responsive modes
+- **Code Editor**: Full-featured browser-based code editor with syntax highlighting and IntelliSense
 - **Change Propagation**: Automatically detect token changes and update dependent components
-- **Version Control**: Semantic versioning with automated changelog generation
-- **Distribution**: One-command publishing to npm with pre-publish validation
+- **Project Management**: Create, save, and manage multiple component library projects
+- **Export & Distribution**: Download projects as zip files or push to GitHub repositories
 
 ### Technology Stack
 
 - **Language**: TypeScript 5.3+
-- **Extension API**: VS Code API 1.85+
-- **UI Framework**: React 18.2+ (for webviews)
+- **Frontend Framework**: Next.js 14+ with React 18.2+
+- **Code Editor**: Sandpack by CodeSandbox (browser-based bundler and preview)
+- **UI Library**: shadcn/ui with Tailwind CSS
 - **State Management**: Zustand 4.5+
-- **Testing**: Vitest 1.2+ with Testing Library 14.0+
+- **Testing**: Vitest 1.2+ with Testing Library 14.0+ and fast-check for property-based tests
 - **Validation**: Zod 3.22+
 - **Templates**: Handlebars 4.7+
-- **Build Tools**: esbuild 0.20+ and Rollup 4.9+
+- **Database**: PostgreSQL (Supabase or PlanetScale)
+- **Authentication**: NextAuth.js or Supabase Auth
+- **Deployment**: Vercel
 
 ## Architecture
 
@@ -29,11 +34,10 @@ The Component Library Builder is a VS Code extension that provides an integrated
 
 The system follows a **Layered Architecture** pattern with clear separation of concerns:
 
-
-1. **Presentation Layer**: VS Code commands, webviews, tree views, and status bar items
+1. **Presentation Layer**: React components, UI controls, and user interactions
 2. **Application Layer**: Business logic orchestration and service coordination
 3. **Domain Layer**: Core models, validation rules, and domain logic
-4. **Infrastructure Layer**: File system access, external integrations (npm, Git, Storybook)
+4. **Infrastructure Layer**: Browser storage, API communication, file system operations
 
 ### Key Architectural Patterns
 
@@ -48,23 +52,25 @@ The system follows a **Layered Architecture** pattern with clear separation of c
 ┌──────────────┐
 │  Developer   │
 └──────┬───────┘
-       │ Uses
+       │ Uses Browser
        ↓
 ┌──────────────────┐      Generates      ┌──────────────┐
-│   VS Code Ext    │ ──────────────────→ │  Component   │
-│                  │                      │  Library     │
+│   Web App        │ ──────────────────→ │  Component   │
+│   (Next.js)      │                      │  Library     │
 └────────┬─────────┘                      └──────────────┘
          │                                        │
-         │ Configures                             │ Consumed by
+         │ Stores                                 │ Exported as
          ↓                                        ↓
 ┌──────────────────┐                      ┌──────────────┐
-│   Storybook      │                      │ Applications │
+│   Database       │                      │  Zip/GitHub  │
+│   (PostgreSQL)   │                      │  Repository  │
 └──────────────────┘                      └──────────────┘
          │
-         │ Publishes
+         │ Authenticates
          ↓
 ┌──────────────────┐
-│   npm Registry   │
+│   Auth Provider  │
+│   (NextAuth)     │
 └──────────────────┘
 ```
 
@@ -127,37 +133,46 @@ interface IComponentRegistry {
 }
 ```
 
-
-#### Storybook Integration
+#### File System Management
 
 ```typescript
-interface IStorybookIntegration {
-  generateStory(component: ComponentSpec): Promise<string>;
-  updateConfig(config: StorybookConfig): Promise<void>;
-  updateMainConfig(projectPath: string): Promise<void>;
-  updatePreviewConfig(projectPath: string, tokens: DesignToken[]): Promise<void>;
+interface IFileSystem {
+  readFile(path: string): Promise<string>;
+  writeFile(path: string, content: string): Promise<void>;
+  deleteFile(path: string): Promise<void>;
+  listFiles(directory: string): Promise<string[]>;
+  exists(path: string): Promise<boolean>;
+}
+
+interface IProjectRepository {
+  getAll(userId: string): Promise<Project[]>;
+  getById(id: string): Promise<Project | null>;
+  create(project: Project): Promise<Project>;
+  update(id: string, updates: Partial<Project>): Promise<Project>;
+  delete(id: string): Promise<void>;
 }
 ```
 
-#### Version Control
+#### Export and Distribution
 
 ```typescript
-interface IVersionManager {
-  bump(type: 'major' | 'minor' | 'patch'): Promise<string>;
-  getCurrentVersion(): Promise<string>;
-  tag(version: string): Promise<void>;
-  analyzeChanges(changes: Change[]): 'major' | 'minor' | 'patch';
+interface IExportManager {
+  exportAsZip(projectId: string): Promise<Blob>;
+  exportToGitHub(projectId: string, repoName: string): Promise<string>;
+  generatePackageJson(project: Project): string;
+  generateReadme(project: Project): string;
 }
+```
 
-interface IChangelogGenerator {
-  generate(entries: ChangelogEntry[]): string;
-  addEntry(entry: ChangelogEntry): Promise<void>;
-}
+#### User Authentication
 
-interface INpmPublisher {
-  publish(config: PublishConfig): Promise<PublishResult>;
-  runPrePublishChecks(): Promise<void>;
-  build(): Promise<void>;
+```typescript
+interface IAuthService {
+  signUp(email: string, password: string): Promise<User>;
+  login(email: string, password: string): Promise<AuthToken>;
+  logout(): Promise<void>;
+  getCurrentUser(): Promise<User | null>;
+  validateToken(token: string): Promise<boolean>;
 }
 ```
 
@@ -250,6 +265,10 @@ class TokenManager {
       oldValue: existing?.$value,
       timestamp: new Date()
     }]);
+  }
+
+  private getTokenId(token: DesignToken): string {
+    return token.$extensions?.['com.component-builder']?.id || '';
   }
 }
 ```
@@ -578,13 +597,10 @@ class ComponentGenerator implements IComponentGenerator {
       content: `export { ${spec.name} } from './${spec.name}';\nexport type { ${spec.name}Props } from './${spec.name}.types';\n`
     });
 
-    // Write files
+    // Write files to in-memory file system
     for (const file of files) {
       await this.fileSystem.writeFile(file.path, file.content);
     }
-
-    // Format and lint
-    await this.formatCode(files.map(f => f.path));
 
     return { files };
   }
@@ -614,80 +630,9 @@ class ComponentGenerator implements IComponentGenerator {
       errors
     };
   }
-
-  private async formatCode(paths: string[]): Promise<void> {
-    // Run Prettier and ESLint
-    for (const path of paths) {
-      if (path.endsWith('.ts') || path.endsWith('.tsx')) {
-        await exec(`prettier --write ${path}`);
-        await exec(`eslint --fix ${path}`);
-      }
-    }
-  }
 }
 ```
 
-
-#### VersionManager
-
-The VersionManager handles semantic versioning operations.
-
-```typescript
-class VersionManager implements IVersionManager {
-  constructor(private fileSystem: IFileSystem) {}
-
-  async getCurrentVersion(): Promise<string> {
-    const packageJson = await this.readPackageJson();
-    return packageJson.version;
-  }
-
-  async bump(type: 'major' | 'minor' | 'patch'): Promise<string> {
-    const current = await this.getCurrentVersion();
-    const newVersion = this.calculateNewVersion(current, type);
-
-    await this.updatePackageJson(newVersion);
-
-    return newVersion;
-  }
-
-  private calculateNewVersion(current: string, type: 'major' | 'minor' | 'patch'): string {
-    const [major, minor, patch] = current.split('.').map(Number);
-
-    switch (type) {
-      case 'major':
-        return `${major + 1}.0.0`;
-      case 'minor':
-        return `${major}.${minor + 1}.0`;
-      case 'patch':
-        return `${major}.${minor}.${patch + 1}`;
-    }
-  }
-
-  analyzeChanges(changes: Change[]): 'major' | 'minor' | 'patch' {
-    const hasBreaking = changes.some(c => c.breaking);
-    const hasFeature = changes.some(c => c.type === 'feature');
-
-    if (hasBreaking) return 'major';
-    if (hasFeature) return 'minor';
-    return 'patch';
-  }
-
-  async tag(version: string): Promise<void> {
-    await exec(`git tag v${version}`);
-  }
-
-  private async readPackageJson(): Promise<any> {
-    const content = await this.fileSystem.readFile('package.json');
-    return JSON.parse(content);
-  }
-
-  private async updatePackageJson(version: string): Promise<void> {
-    const packageJson = await this.readPackageJson();
-    packageJson.version = version;
-    await this.fileSystem.writeFile('package.json', JSON.stringify(packageJson, null, 2));
-  }
-}
-```
 
 #### PropagationEngine
 
@@ -698,7 +643,7 @@ class PropagationEngine implements ITokenPropagator {
   constructor(
     private dependencyGraph: ComponentDependencyGraph,
     private cssGenerator: CSSVariableGenerator,
-    private storybookIntegration: IStorybookIntegration
+    private fileSystem: IFileSystem
   ) {}
 
   async propagateChanges(changes: TokenChange[]): Promise<PropagationResult> {
@@ -786,12 +731,6 @@ class PropagationEngine implements ITokenPropagator {
         target: componentId,
         priority: 2
       });
-
-      actions.push({
-        type: 'update-story',
-        target: componentId,
-        priority: 3
-      });
     }
 
     return actions;
@@ -810,30 +749,193 @@ class PropagationEngine implements ITokenPropagator {
       case 'update-component':
         await this.updateComponent(action.target);
         return { action, success: true };
-      case 'update-story':
-        await this.updateStory(action.target);
-        return { action, success: true };
       default:
         return { action, success: false, error: 'Unknown action type' };
     }
   }
 
   private async regenerateCSS(): Promise<void> {
-    // Implementation
+    // Implementation handled by CSSVariableGenerator
   }
 
   private async updateComponent(componentId: string): Promise<void> {
-    // Implementation
+    // Implementation: update component files in file system
+  }
+}
+```
+
+#### ExportManager
+
+The ExportManager handles project export to zip files and GitHub.
+
+```typescript
+class ExportManager implements IExportManager {
+  constructor(
+    private fileSystem: IFileSystem,
+    private projectRepository: IProjectRepository
+  ) {}
+
+  async exportAsZip(projectId: string): Promise<Blob> {
+    const project = await this.projectRepository.getById(projectId);
+    if (!project) {
+      throw new Error(`Project not found: ${projectId}`);
+    }
+
+    const zip = new JSZip();
+
+    // Add all project files
+    for (const [path, content] of Object.entries(project.files)) {
+      zip.file(path, content);
+    }
+
+    // Add package.json
+    const packageJson = this.generatePackageJson(project);
+    zip.file('package.json', packageJson);
+
+    // Add README.md
+    const readme = this.generateReadme(project);
+    zip.file('README.md', readme);
+
+    // Add tokens as JSON
+    zip.file('tokens.json', JSON.stringify(project.tokens, null, 2));
+
+    // Generate CSS variables
+    const cssGenerator = new CSSVariableGenerator(new TokenResolver());
+    const css = cssGenerator.generate(project.tokens);
+    zip.file('tokens.css', css);
+
+    return await zip.generateAsync({ type: 'blob' });
   }
 
-  private async updateStory(componentId: string): Promise<void> {
-    // Implementation
+  async exportToGitHub(projectId: string, repoName: string): Promise<string> {
+    const project = await this.projectRepository.getById(projectId);
+    if (!project) {
+      throw new Error(`Project not found: ${projectId}`);
+    }
+
+    // Use GitHub API to create repository and push files
+    // Implementation depends on GitHub OAuth integration
+    const repoUrl = `https://github.com/${project.userId}/${repoName}`;
+    
+    // Create repository
+    // Push all files
+    // Return repository URL
+    
+    return repoUrl;
+  }
+
+  generatePackageJson(project: Project): string {
+    const packageJson = {
+      name: project.name.toLowerCase().replace(/\s+/g, '-'),
+      version: '1.0.0',
+      description: project.description || '',
+      main: 'dist/index.js',
+      types: 'dist/index.d.ts',
+      scripts: {
+        build: 'tsc',
+        test: 'vitest',
+        storybook: 'storybook dev -p 6006',
+        'build-storybook': 'storybook build'
+      },
+      dependencies: {
+        react: '^18.2.0',
+        'react-dom': '^18.2.0'
+      },
+      devDependencies: {
+        '@types/react': '^18.2.0',
+        '@types/react-dom': '^18.2.0',
+        typescript: '^5.3.0',
+        vitest: '^1.2.0',
+        '@testing-library/react': '^14.0.0',
+        storybook: '^7.6.0'
+      }
+    };
+
+    return JSON.stringify(packageJson, null, 2);
+  }
+
+  generateReadme(project: Project): string {
+    return `# ${project.name}
+
+${project.description || 'A React component library'}
+
+## Installation
+
+\`\`\`bash
+npm install ${project.name.toLowerCase().replace(/\s+/g, '-')}
+\`\`\`
+
+## Usage
+
+\`\`\`tsx
+import { Button } from '${project.name.toLowerCase().replace(/\s+/g, '-')}';
+
+function App() {
+  return <Button>Click me</Button>;
+}
+\`\`\`
+
+## Development
+
+\`\`\`bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Start Storybook
+npm run storybook
+\`\`\`
+
+## Components
+
+${project.components.map(c => `- **${c.name}**: ${c.description || ''}`).join('\n')}
+
+## Design Tokens
+
+This library uses ${project.tokens.length} design tokens for consistent styling.
+`;
   }
 }
 ```
 
 
 ## Data Models
+
+### User
+
+```typescript
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AuthToken {
+  token: string;
+  expiresAt: Date;
+  user: User;
+}
+```
+
+### Project
+
+```typescript
+interface Project {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  files: Record<string, string>;  // path -> content mapping
+  tokens: DesignToken[];
+  components: ComponentSpec[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
 
 ### Design Token
 
@@ -997,7 +1099,7 @@ interface PropagationPlan {
 }
 
 interface PropagationAction {
-  type: 'regenerate-css' | 'update-component' | 'update-story' | 'update-docs';
+  type: 'regenerate-css' | 'update-component' | 'update-docs';
   target: string;
   priority: number;
 }
@@ -1015,40 +1117,20 @@ interface ActionResult {
 }
 ```
 
-### Version Control
+### Export Configuration
 
 ```typescript
-interface ChangelogEntry {
-  version: string;
-  date: Date;
-  changes: GroupedChanges;
+interface ExportConfig {
+  includeTests: boolean;
+  includeStories: boolean;
+  includeDocs: boolean;
+  format: 'zip' | 'github';
 }
 
-interface GroupedChanges {
-  breaking: Change[];
-  features: Change[];
-  fixes: Change[];
-  docs: Change[];
-  chores: Change[];
-}
-
-interface Change {
-  type: 'breaking' | 'feature' | 'fix' | 'docs' | 'chore';
-  description: string;
-  breaking?: boolean;
-}
-
-interface PublishConfig {
-  registry?: string;
-  access: 'public' | 'restricted';
-  tag?: string;              // e.g., 'latest', 'beta', 'alpha'
-  dryRun?: boolean;
-}
-
-interface PublishResult {
-  success: boolean;
-  version: string;
-  errors?: string[];
+interface GitHubConfig {
+  repoName: string;
+  isPrivate: boolean;
+  description?: string;
 }
 ```
 
@@ -1066,6 +1148,308 @@ interface CircularReference {
 }
 ```
 
+
+## Browser-Based Architecture
+
+### In-Memory File System
+
+The application uses an in-memory file system to manage project files without server-side file operations:
+
+```typescript
+class InMemoryFileSystem implements IFileSystem {
+  private files: Map<string, string> = new Map();
+
+  async readFile(path: string): Promise<string> {
+    const content = this.files.get(path);
+    if (content === undefined) {
+      throw new FileSystemError('read', path, new Error('File not found'));
+    }
+    return content;
+  }
+
+  async writeFile(path: string, content: string): Promise<void> {
+    this.files.set(path, content);
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    if (!this.files.has(path)) {
+      throw new FileSystemError('delete', path, new Error('File not found'));
+    }
+    this.files.delete(path);
+  }
+
+  async listFiles(directory: string): Promise<string[]> {
+    const files: string[] = [];
+    for (const path of this.files.keys()) {
+      if (path.startsWith(directory)) {
+        files.push(path);
+      }
+    }
+    return files;
+  }
+
+  async exists(path: string): Promise<boolean> {
+    return this.files.has(path);
+  }
+
+  toJSON(): Record<string, string> {
+    return Object.fromEntries(this.files);
+  }
+
+  fromJSON(data: Record<string, string>): void {
+    this.files = new Map(Object.entries(data));
+  }
+}
+```
+
+### Sandpack Integration
+
+The application uses Sandpack for the code editor and live preview:
+
+```typescript
+import { Sandpack } from '@codesandbox/sandpack-react';
+
+interface EditorProps {
+  files: Record<string, string>;
+  onFileChange: (path: string, content: string) => void;
+}
+
+function CodeEditor({ files, onFileChange }: EditorProps) {
+  return (
+    <Sandpack
+      template="react-ts"
+      files={files}
+      options={{
+        showNavigator: true,
+        showTabs: true,
+        showLineNumbers: true,
+        editorHeight: '100vh',
+        autorun: true,
+        autoReload: true,
+      }}
+      theme="dark"
+    />
+  );
+}
+```
+
+### State Management with Zustand
+
+```typescript
+interface EditorState {
+  files: Record<string, string>;
+  activeFile: string;
+  updateFile: (path: string, content: string) => void;
+  setActiveFile: (path: string) => void;
+}
+
+export const useEditorStore = create<EditorState>((set) => ({
+  files: {},
+  activeFile: '',
+  updateFile: (path, content) =>
+    set((state) => ({
+      files: { ...state.files, [path]: content },
+    })),
+  setActiveFile: (path) => set({ activeFile: path }),
+}));
+
+interface TokenState {
+  tokens: DesignToken[];
+  selectedToken: DesignToken | null;
+  addToken: (token: DesignToken) => void;
+  updateToken: (id: string, updates: Partial<DesignToken>) => void;
+  deleteToken: (id: string) => void;
+  selectToken: (token: DesignToken | null) => void;
+}
+
+export const useTokenStore = create<TokenState>((set) => ({
+  tokens: [],
+  selectedToken: null,
+  addToken: (token) =>
+    set((state) => ({ tokens: [...state.tokens, token] })),
+  updateToken: (id, updates) =>
+    set((state) => ({
+      tokens: state.tokens.map((t) =>
+        t.$extensions?.['com.component-builder']?.id === id
+          ? { ...t, ...updates }
+          : t
+      ),
+    })),
+  deleteToken: (id) =>
+    set((state) => ({
+      tokens: state.tokens.filter(
+        (t) => t.$extensions?.['com.component-builder']?.id !== id
+      ),
+    })),
+  selectToken: (token) => set({ selectedToken: token }),
+}));
+
+interface ProjectState {
+  currentProject: Project | null;
+  projects: Project[];
+  loadProject: (id: string) => Promise<void>;
+  saveProject: () => Promise<void>;
+  createProject: (name: string, description?: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+}
+
+export const useProjectStore = create<ProjectState>((set, get) => ({
+  currentProject: null,
+  projects: [],
+  loadProject: async (id) => {
+    const response = await fetch(`/api/projects/${id}`);
+    const project = await response.json();
+    set({ currentProject: project });
+  },
+  saveProject: async () => {
+    const project = get().currentProject;
+    if (!project) return;
+    await fetch(`/api/projects/${project.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(project),
+    });
+  },
+  createProject: async (name, description) => {
+    const response = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description }),
+    });
+    const project = await response.json();
+    set({ currentProject: project });
+  },
+  deleteProject: async (id) => {
+    await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+    set((state) => ({
+      projects: state.projects.filter((p) => p.id !== id),
+    }));
+  },
+}));
+```
+
+### API Routes (Next.js)
+
+```typescript
+// app/api/projects/route.ts
+export async function GET(request: Request) {
+  const session = await getSession(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const projects = await db.project.findMany({
+    where: { userId: session.user.id },
+  });
+
+  return Response.json(projects);
+}
+
+export async function POST(request: Request) {
+  const session = await getSession(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const body = await request.json();
+  const project = await db.project.create({
+    data: {
+      userId: session.user.id,
+      name: body.name,
+      description: body.description,
+      files: {},
+      tokens: [],
+      components: [],
+    },
+  });
+
+  return Response.json(project);
+}
+
+// app/api/projects/[id]/route.ts
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const project = await db.project.findUnique({
+    where: { id: params.id, userId: session.user.id },
+  });
+
+  if (!project) {
+    return new Response('Not found', { status: 404 });
+  }
+
+  return Response.json(project);
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const body = await request.json();
+  const project = await db.project.update({
+    where: { id: params.id, userId: session.user.id },
+    data: body,
+  });
+
+  return Response.json(project);
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getSession(request);
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  await db.project.delete({
+    where: { id: params.id, userId: session.user.id },
+  });
+
+  return new Response(null, { status: 204 });
+}
+```
+
+### Database Schema (Prisma)
+
+```prisma
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  password  String
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  files       Json     @default("{}")
+  tokens      Json     @default("[]")
+  components  Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+```
 
 ## Correctness Properties
 
@@ -1206,47 +1590,27 @@ After analyzing all acceptance criteria, I identified several areas where proper
 
 **Validates: Requirements 10.1**
 
-### Version Management Properties
-
-**Property 20: Semantic Version Bump Correctness**
-
-*For any* current version string and bump type (major, minor, patch), the new version should follow semver rules: major bumps reset minor and patch to 0, minor bumps reset patch to 0 and preserve major, patch bumps preserve both major and minor.
-
-**Validates: Requirements 11.2, 11.3, 11.4, 11.5, 11.6, 11.7**
-
-**Property 21: Breaking Changes Trigger Major Bump**
-
-*For any* set of changes, if at least one change is marked as breaking, the Version_Manager should determine the bump type as "major".
-
-**Validates: Requirements 11.2**
-
-**Property 22: Changelog Breaking Changes Section**
-
-*For any* changelog entry with breaking changes, the generated changelog markdown should include a "BREAKING CHANGES" section with warning emoji containing all breaking changes.
-
-**Validates: Requirements 12.3**
-
 ### Change Propagation Properties
 
-**Property 23: Complete Change Detection**
+**Property 20: Complete Change Detection**
 
 *For any* two token sets (old and new), the Propagation_Engine should detect all differences including every created, updated, and deleted token.
 
 **Validates: Requirements 14.1**
 
-**Property 24: Dependency Graph Completeness**
+**Property 21: Dependency Graph Completeness**
 
 *For any* token and component relationship, if a component uses a token, querying the Dependency_Graph for that token should return the component ID.
 
 **Validates: Requirements 14.5, 17.4**
 
-**Property 25: Impact Severity Classification**
+**Property 22: Impact Severity Classification**
 
 *For any* set of token changes, the calculated severity should be "critical" if deletions affect more than 10 components, "high" if deletions affect 1-10 components or updates affect more than 20 components, "medium" if updates affect 6-20 components, and "low" if updates affect 1-5 components.
 
 **Validates: Requirements 15.2**
 
-**Property 26: Dependency Recording**
+**Property 23: Dependency Recording**
 
 *For any* component generated with tokens, all token IDs from the ComponentSpec should be recorded in the Dependency_Graph as dependencies of that component.
 
@@ -1254,7 +1618,7 @@ After analyzing all acceptance criteria, I identified several areas where proper
 
 ### Template Engine Properties
 
-**Property 27: Template Context Availability**
+**Property 24: Template Context Availability**
 
 *For any* ComponentSpec and template, rendering the template should make all fields from the ComponentSpec accessible in the template context.
 
@@ -1262,39 +1626,31 @@ After analyzing all acceptance criteria, I identified several areas where proper
 
 ### File System Safety Properties
 
-**Property 28: Atomic Write Guarantee**
+**Property 25: Atomic Write Guarantee**
 
 *For any* file write operation, if the operation fails, the file should either contain the complete new content or remain unchanged with the original content (no partial writes).
 
 **Validates: Requirements 19.1**
 
-**Property 29: Workspace Path Validation**
+**Property 26: Workspace Path Validation**
 
-*For any* file path, the Extension should accept the path if and only if the normalized absolute path starts with the workspace directory path.
+*For any* file path, the Application should accept the path if and only if the normalized path is within the project directory structure.
 
 **Validates: Requirements 19.6**
 
 ### Performance Properties
 
-**Property 30: Cache Hit Performance**
+**Property 27: Cache Hit Performance**
 
 *For any* data that has been accessed once, subsequent accesses to the same data should complete faster than the first access (demonstrating caching).
 
 **Validates: Requirements 20.6**
 
-### VS Code Integration Properties
+### Browser Compatibility Properties
 
-**Property 31: Token Autocomplete Completeness**
+**Property 28: Path Separator Normalization**
 
-*For any* set of tokens, when triggering autocomplete after "var(--", the suggestion list should include all token CSS variable names.
-
-**Validates: Requirements 22.6**
-
-### Cross-Platform Properties
-
-**Property 32: Path Separator Normalization**
-
-*For any* file path with either forward slashes or backslashes, the Extension should normalize the path to use the platform-appropriate separator and handle the path correctly.
+*For any* file path with either forward slashes or backslashes, the Application should normalize the path to use forward slashes consistently.
 
 **Validates: Requirements 23.6**
 
