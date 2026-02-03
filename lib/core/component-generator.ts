@@ -91,7 +91,9 @@ export class ComponentGenerator implements IComponentGenerator {
     // Generate component file
     const componentTemplate = this.templateEngine.getTemplate('Component.tsx.hbs');
     if (!componentTemplate) throw new Error('Component template not found');
-    const componentContent = componentTemplate(spec);
+    const componentContent = typeof componentTemplate === 'function' 
+      ? componentTemplate(spec)
+      : this.templateEngine.render(componentTemplate, spec);
     files.push({
       path: `/components/${spec.name}/${spec.name}.tsx`,
       content: componentContent,
@@ -100,7 +102,9 @@ export class ComponentGenerator implements IComponentGenerator {
     // Generate types file
     const typesTemplate = this.templateEngine.getTemplate('Component.types.ts.hbs');
     if (!typesTemplate) throw new Error('Types template not found');
-    const typesContent = typesTemplate(spec);
+    const typesContent = typeof typesTemplate === 'function'
+      ? typesTemplate(spec)
+      : this.templateEngine.render(typesTemplate, spec);
     files.push({
       path: `/components/${spec.name}/${spec.name}.types.ts`,
       content: typesContent,
@@ -109,7 +113,9 @@ export class ComponentGenerator implements IComponentGenerator {
     // Generate styles file
     const stylesTemplate = this.templateEngine.getTemplate('Component.module.css.hbs');
     if (!stylesTemplate) throw new Error('Styles template not found');
-    const stylesContent = stylesTemplate(spec);
+    const stylesContent = typeof stylesTemplate === 'function'
+      ? stylesTemplate(spec)
+      : this.templateEngine.render(stylesTemplate, spec);
     files.push({
       path: `/components/${spec.name}/${spec.name}.module.css`,
       content: stylesContent,
@@ -118,7 +124,9 @@ export class ComponentGenerator implements IComponentGenerator {
     // Generate test file
     const testTemplate = this.templateEngine.getTemplate('Component.test.tsx.hbs');
     if (!testTemplate) throw new Error('Test template not found');
-    const testContent = testTemplate(spec);
+    const testContent = typeof testTemplate === 'function'
+      ? testTemplate(spec)
+      : this.templateEngine.render(testTemplate, spec);
     files.push({
       path: `/components/${spec.name}/${spec.name}.test.tsx`,
       content: testContent,
@@ -127,7 +135,9 @@ export class ComponentGenerator implements IComponentGenerator {
     // Generate story file
     const storyTemplate = this.templateEngine.getTemplate('Component.stories.tsx.hbs');
     if (!storyTemplate) throw new Error('Story template not found');
-    const storyContent = storyTemplate(spec);
+    const storyContent = typeof storyTemplate === 'function'
+      ? storyTemplate(spec)
+      : this.templateEngine.render(storyTemplate, spec);
     files.push({
       path: `/components/${spec.name}/${spec.name}.stories.tsx`,
       content: storyContent,

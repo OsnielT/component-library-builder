@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useEditorStore } from '@/lib/store/use-editor-store';
-
 interface SelectedElement {
   tagName: string;
   className: string;

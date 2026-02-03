@@ -8,6 +8,9 @@ export interface ITemplateEngine {
   loadTemplate(name: string): Promise<string>;
 }
 
+export type TemplateFunction = (context: unknown) => string;
+export type Template = string | TemplateFunction;
+
 // Helper functions for templates
 const helpers = {
   camelCase: (str: string): string => {
@@ -58,7 +61,7 @@ const helpers = {
 };
 
 export class SimpleTemplateEngine implements ITemplateEngine {
-  private templates: Map<string, string>;
+  private templates: Map<string, Template>;
 
   constructor() {
     this.templates = new Map();
@@ -91,20 +94,23 @@ export class SimpleTemplateEngine implements ITemplateEngine {
     if (!template) {
       throw new Error(`Template not found: ${name}`);
     }
+    if (typeof template === 'function') {
+      throw new Error(`Template ${name} is a function, use getTemplate instead`);
+    }
     return template;
   }
 
   /**
-   * Store a template string
+   * Store a template string or function
    */
-  setTemplate(name: string, template: string): void {
+  setTemplate(name: string, template: Template): void {
     this.templates.set(name, template);
   }
 
   /**
-   * Get a template string
+   * Get a template string or function
    */
-  getTemplate(name: string): string | undefined {
+  getTemplate(name: string): Template | undefined {
     return this.templates.get(name);
   }
 }

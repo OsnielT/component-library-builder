@@ -267,9 +267,9 @@ ${variantArgs}
  * Load all default templates into the template engine
  */
 export function loadDefaultTemplates(engine: SimpleTemplateEngine): void {
-  engine.setTemplate('Component.tsx.hbs', componentTemplate);
-  engine.setTemplate('Component.types.ts.hbs', typesTemplate);
-  engine.setTemplate('Component.module.css.hbs', stylesTemplate);
-  engine.setTemplate('Component.test.tsx.hbs', testTemplate);
-  engine.setTemplate('Component.stories.tsx.hbs', storyTemplate);
+  engine.setTemplate('Component.tsx.hbs', componentTemplate as (context: unknown) => string);
+  engine.setTemplate('Component.types.ts.hbs', typesTemplate as (context: unknown) => string);
+  engine.setTemplate('Component.module.css.hbs', stylesTemplate as (context: unknown) => string);
+  engine.setTemplate('Component.test.tsx.hbs', testTemplate as (context: unknown) => string);
+  engine.setTemplate('Component.stories.tsx.hbs', storyTemplate as (context: unknown) => string);
 }

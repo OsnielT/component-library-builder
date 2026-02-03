@@ -314,8 +314,8 @@ export function ComponentSpecForm({ spec, onSubmit, onCancel }: ComponentSpecFor
                       </optgroup>
                       <optgroup label="Unions">
                         <option value="string | number">string | number</option>
-                        <option value="'small' | 'medium' | 'large'">'small' | 'medium' | 'large'</option>
-                        <option value="'left' | 'center' | 'right'">'left' | 'center' | 'right'</option>
+                        <option value="'small' | 'medium' | 'large'">&apos;small&apos; | &apos;medium&apos; | &apos;large&apos;</option>
+                        <option value="'left' | 'center' | 'right'">&apos;left&apos; | &apos;center&apos; | &apos;right&apos;</option>
                       </optgroup>
                     </select>
                     <button
