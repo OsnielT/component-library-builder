@@ -6,9 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Set base path for GitHub Pages
-  basePath: '/component-library-builder',
-  assetPrefix: '/component-library-builder/',
+  // Set base path for GitHub Pages only in production
+  basePath: process.env.NODE_ENV === 'production' ? '/component-library-builder' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/component-library-builder/' : '',
   experimental: {
     typedRoutes: true,
   },

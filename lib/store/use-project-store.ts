@@ -21,6 +21,7 @@ interface ProjectState {
   saveProject: () => void;
   deleteProject: (id: string) => void;
   updateProjectMetadata: (name: string, description?: string) => void;
+  exportProject: () => void;
   
   // Initialization
   loadProjectsFromStorage: () => void;
@@ -264,6 +265,48 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to load projects',
+      });
+    }
+  },
+
+  exportProject: () => {
+    const { currentProject } = get();
+
+    if (!currentProject) {
+      set({ error: 'No project to export' });
+      return;
+    }
+
+    try {
+      // Create a JSON blob with the project data
+      const exportData = {
+        name: currentProject.name,
+        description: currentProject.description,
+        version: '1.0.0',
+        files: currentProject.files,
+        tokens: currentProject.tokens,
+        components: currentProject.components,
+        exportedAt: new Date().toISOString(),
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${currentProject.name.toLowerCase().replace(/\s+/g, '-')}-export.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      set({ error: null });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to export project',
       });
     }
   },
